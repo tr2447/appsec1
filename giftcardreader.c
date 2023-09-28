@@ -35,7 +35,9 @@ void animate(char *msg, unsigned char *program) {
             case 0x00:
                 break;
             case 0x01:
-                regs[arg1] = *mptr;
+        	if(arg1>= 0 && arg1<=15){
+            		regs[arg1] = *mptr;
+        	}
                 break;
             case 0x02:
                 *mptr = regs[arg1];
@@ -120,7 +122,7 @@ void print_gift_card_info(struct this_gift_card *thisone) {
 		else if (gcrd_ptr->type_of_record == 3) {
             gcp_ptr = gcrd_ptr->actual_record;
 			printf("      record_type: animated message\n");
-            // BDG: Hmm... is message guaranteed to be null-terminated?
+            
             printf("      message: %s\n", gcp_ptr->message);
             printf("  [running embedded program]  \n");
             animate(gcp_ptr->message, gcp_ptr->program);
@@ -129,7 +131,7 @@ void print_gift_card_info(struct this_gift_card *thisone) {
 	printf("  Total value: %d\n\n",get_gift_card_value(thisone));
 }
 
-// Added to support web functionalities
+
 void gift_card_json(struct this_gift_card *thisone) {
     struct gift_card_data *gcd_ptr;
     struct gift_card_record_data *gcrd_ptr;
@@ -159,7 +161,7 @@ void gift_card_json(struct this_gift_card *thisone) {
             struct gift_card_program *gcp = gcrd_ptr->actual_record;
 			printf("      \"record_type\": \"animated message\",\n");
 			printf("      \"message\": \"%s\",\n",gcp->message);
-            // programs are binary so we will hex for the json
+            
             char *hexchars = "01234567890abcdef";
             char program_hex[512+1];
             program_hex[512] = '\0';
@@ -187,12 +189,16 @@ struct this_gift_card *gift_card_reader(FILE *input_fd) {
     void *optr;
 	void *ptr;
 
-	// Loop to do the whole file
+	
 	while (!feof(input_fd)) {
 
 		struct gift_card_data *gcd_ptr;
-		/* JAC: Why aren't return types checked? */
+		
 		fread(&ret_val->num_bytes, 4,1, input_fd);
+	 	if (ret_val->num_bytes < 0) {
+			printf("Please enter valid giftcard values");
+			exit(0);
+  		}
 
 		// Make something the size of the rest and read it in
 		ptr = malloc(ret_val->num_bytes);
