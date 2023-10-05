@@ -1,0 +1,62 @@
+Assignment 1 Part 3 Writeup 
+------------------------------------------
+
+After running our testcases from part 2 which are crash1.gft, crash2.gft, hang.gft & example.gft, we found below code coverage percentage.
+Lines executed:53.22% of 171
+
+Now, for the second part of uncovered code, two new gft files are created with following characteristics to increase the code coverage.
+---------------------------------------------------------------
+
+<cov1.gft>
+- Initial, testcases from part2 were created with record type: 2 & 3. So, the code for the record type 1 was not covered. cov1.gft is created with record type 1 and will cover the lines in function: gift_card_json():
+
+>> if (gcrd_ptr->type_of_record == 1) {
+            printf("      \"record_type\": \"amount_change\",\n");
+            gcac_ptr = gcrd_ptr->actual_record;
+            printf("      \"amount_added\": %d,\n",gcac_ptr->amount_added);
+            if (gcac_ptr->amount_added>0) {
+                printf("      \"signature\": \"%32.32s\"\n",gcac_ptr->actual_signature);
+            }
+	}
+
+This increased the code coverage percentage to -
+Lines executed:71.35% of 171
+
+-----------------------------------------------------------------
+
+<cov2.gft> 
+
+- In addition the testcases from part2 did not covered any switch cases other then the \0x01 and \0x09 cases. So, cov2.gft is created with program data bytes with values "\x10\04\09". This invokes the lines from the switch case \0x10.
+
+This additionally increased the code coverage to 
+Lines executed:73.10% of 171
+
+
+
+
+------------------------------------------------------------
+
+
+
+<fuzzer1.gft>
+
+- This is the fuzzer generated crash testcase. This testcase invokes switch case \0x04. When the giftcardreader.c is executed with fuzzer1 it calls an animate function and executes case \0x04
+- here the gift card program  is trying to access unauthorised value by passing the value of arg to higher than 15
+- A check is added here so if arg2 is in the range (0, 15) then it only allows initialization else it prints not a valid value
+
+-------------------------------------------------------------
+
+
+
+<fuzzer2.gft>
+
+- This is the fuzzer generated hang testcase. This testcase calls case \0x10. Here, when fuzzer 2 and giftcardreader are run it calls an animate function and executes the case \0x10 and will go on a infinite loop.
+- This is because the giftcard program data value which is a larger value is being passed in the giftcardreader in arg1 in animate. Now, it is then type casted to arg1 and assigned to program counter(pc) whose value is decremented in this switch case and then we increment the pc value by 3. The value of pc is then assigned again in case \0x10 and this keeps on repeating as pc value never goes beyond size of <program+256>.
+- To fix this we have to change code in case \0x10 to:
+> if (zf) pc += (unsigned char)arg1;
+- Here, type casting as unsigned char will ensure that the pc value increases on regular interval and while loop breaks at a certain point.
+
+After running the fuzzer test cases the code percentage increases to
+Lines executed:83.33% of 174
+
+
